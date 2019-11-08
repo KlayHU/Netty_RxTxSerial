@@ -1,6 +1,5 @@
 package netty.handler;
 import Lora.recive.MsgSendData;
-import Lora.recive.Node;
 import Lora.send.MsgRevData;
 import Test.GetSerialPorts;
 import Test.PortManager;
@@ -10,8 +9,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.util.Attribute;
-import io.netty.util.AttributeKey;
 import netty.Innitializer.serverInnitializer;
 
 import java.util.List;
@@ -30,9 +27,7 @@ public class msgHandler extends ByteToMessageDecoder {
      */
     private int msglengthindex=1;
 
-
     private static ChannelGroup channelGroup=new serverInnitializer().channelGroup;
-    public static AttributeKey<Node> ATTR_GATEWAY_KEY = AttributeKey.valueOf("gateway");
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> list) throws Exception {
@@ -44,8 +39,13 @@ public class msgHandler extends ByteToMessageDecoder {
         }
 
         int acredindex = in.readerIndex();
+
         int frameLength = in.getByte(acredindex + msglengthindex);    //在可读取空间取前两个字节
-        System.out.println("解析到的长度：" + frameLength);
+//        if (frameLength null) {
+//            System.out.println("解析到的长度：" + frameLength);
+//        }
+//        else
+            System.out.println("解析到的长度：" + frameLength);
 
         if (canReadCount == frameLength) {
             byte[] dest = new byte[canReadCount];
@@ -71,36 +71,8 @@ public class msgHandler extends ByteToMessageDecoder {
             String string = bytesToHexString(dust);
             System.out.println("收到的消息大于实际解析的长度！");
             System.out.println("打印：\n"+string);
-//            ctx.flush();
-//            acredindex =frameLength+1;
-//
-//            while(canReadCount-frameLength!=frameLength){
-//                byte [] dusts = new byte[frameLength];
-//                in.getBytes(acredindex+frameLength,dusts,0,frameLength);
-//                String strings = bytesToHexString(dusts);
-//                if(canReadCount-frameLength>=frameLength){
-//                    System.out.println("消息大于解析时再次解析后的数据是\n:"+strings);
-//                    canReadCount=canReadCount-frameLength;
-//
-//                    }
-//                    ctx.flush();
-//                if(canReadCount<frameLength) {
-//
-//                    frameLength=canReadCount;
-//                    byte [] dustss = new byte[frameLength];
-//                    in.getBytes(acredindex+canReadCount,dustss,0,frameLength);
-//
-//                    String stringss = bytesToHexString(dustss);
-//                    System.out.println("消息小于解析时再次解析后的数据是\n"+stringss);
-//
-//                }
-//                ctx.flush();
-//            }
-//
-//                in.clear();
         }
             acredindex += 2;
-
 
             MsgRevData MsgRevData = new MsgRevData();
 
@@ -135,7 +107,6 @@ public class msgHandler extends ByteToMessageDecoder {
 
             GetSerialPorts.sendData(getSerialPorts.serialPort1, msg);
             ctx.flush();
-
         }
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
@@ -148,30 +119,6 @@ public class msgHandler extends ByteToMessageDecoder {
         msgRevData.setLora_numb((short)0);
         msgRevData.setMsgLength((short) (bytes.length+6));
     }
-
-
-
-    /**
-     * 保存eui到Channel
-     * @param ctx
-     * @param eui
-     */
-    public static  void updateChannel(ChannelHandlerContext ctx,String eui){
-        //保存网关信息到Channel
-        Attribute<Node> gatewayattr = ctx.channel().attr(ATTR_GATEWAY_KEY);
-        Node node = gatewayattr.get();
-        System.out.println(node);
-
-        if (node == null){
-            node = new Node();
-            gatewayattr.set(node);
-        }
-        node.setCtx(ctx);
-        node.setId(eui);
-        gatewayattr.set(node);
-
-    }
-
 
     public static void sendMsg(MsgSendData msgRevData,byte[] bytes){
 
@@ -196,10 +143,6 @@ public class msgHandler extends ByteToMessageDecoder {
         }
 
     }
-
-
-
-
 
     private static String bytesToHexString(byte[] src){
         StringBuilder stringBuilder = new StringBuilder("");

@@ -10,9 +10,7 @@ import netty.Innitializer.serverInnitializer;
 
 public class nettyConfig implements Runnable {
 
-
     public void run(){
-
         NioEventLoopGroup boss=new NioEventLoopGroup();
         NioEventLoopGroup work=new NioEventLoopGroup();
         ServerBootstrap b=new ServerBootstrap();
@@ -29,6 +27,5 @@ public class nettyConfig implements Runnable {
             boss.shutdownGracefully();
             work.shutdownGracefully();
         }
-
     }
 }

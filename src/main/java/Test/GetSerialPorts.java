@@ -1,8 +1,6 @@
 package Test;
 
 import Lora.recive.MsgSendData;
-import Lora.recive.Node;
-import Lora.send.MsgRevData;
 import gnu.io.*;
 import netty.handler.msgHandler;
 
@@ -42,25 +40,6 @@ public final class GetSerialPorts {
 
         final SerialPort serialPort = openSerialPort(serialPortName,115200);
         setserialPort(serialPort);
-//        TCPServer tcpServer = new TCPServer(8888);
-//        sendData(serialPort,);
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                int i = 1;
-//                while(i<1000) {
-//                    String s = "测试\n";
-//                    byte[] bytes = s.getBytes();
-//                    GetSerialPorts.sendData(serialPort, bytes);
-//                    i++;
-//                    try {
-//                        Thread.sleep(2000);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        }).start();
 
         GetSerialPorts.setListenerToSerialPort(serialPort, new SerialPortEventListener() {
             @Override
@@ -100,7 +79,6 @@ public final class GetSerialPorts {
             } catch (PortInUseException e) {
                 e.printStackTrace();
             }
-
             if (commPort instanceof SerialPort) {
                 SerialPort serialPort = (SerialPort) commPort;
 
@@ -113,7 +91,6 @@ public final class GetSerialPorts {
                 return serialPort;
             }
             else {
-
                 throw new NoSuchPortException();
             }
         } catch (NoSuchPortException e) {
@@ -131,7 +108,6 @@ public final class GetSerialPorts {
         }
     }
 
-
     public static void sendData(SerialPort serialPort, byte[] data) {
         OutputStream os = null;
         try {
@@ -141,9 +117,7 @@ public final class GetSerialPorts {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
-
 
     public SerialPort getSerialPort1() {
         return serialPort1;
@@ -188,9 +162,7 @@ public final class GetSerialPorts {
                         }else if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("COM3")){
                             msgSendData.setLora_numb((short)1);
                         }
-
                 }
-
 
                 msgSendData.setMsgLength((short) (bytes.length+6));
                 msgHandler.sendMsg(msgSendData,bytes);
@@ -211,10 +183,8 @@ public final class GetSerialPorts {
         return bytes;
     }
 
-
     private static void setListenerToSerialPort(SerialPort serialPort, SerialPortEventListener listener) {
         try {
-
             serialPort.addEventListener(listener);
         } catch (TooManyListenersException e) {
             e.printStackTrace();
@@ -222,6 +192,5 @@ public final class GetSerialPorts {
         serialPort.notifyOnDataAvailable(true);
         serialPort.notifyOnBreakInterrupt(true);
     }
-
 
 }

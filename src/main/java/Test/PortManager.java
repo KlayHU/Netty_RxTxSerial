@@ -22,7 +22,5 @@ public class PortManager {
             portMap.put(systemPort.get(i), getSerialPorts);
             i += 2;
         }
-
     }
-
 }
