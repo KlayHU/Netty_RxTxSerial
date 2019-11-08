@@ -19,63 +19,124 @@ import java.util.Map;
 
 public class msgHandler extends ByteToMessageDecoder {
 
+    /**
+     * 长度:六个字节
+     * 指对协议前六个字节的处理
+     */
+    private int wordlength=6;
+
+    /**
+     * 消息长度所在位置
+     */
+    private int msglengthindex=1;
+
+
     private static ChannelGroup channelGroup=new serverInnitializer().channelGroup;
     public static AttributeKey<Node> ATTR_GATEWAY_KEY = AttributeKey.valueOf("gateway");
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> list) throws Exception {
         System.out.println("服务器收到消息!");
-        int canReadCount=in.readableBytes();
-        System.out.println("经过这里");
-        int Acredindex=in.readerIndex();
-        int frameLength=in.getShort(Acredindex);
-        System.out.println("到达这里");
-        byte[] dest=new byte[frameLength];
-        in.getBytes(Acredindex,dest,0,canReadCount);
+        int canReadCount = in.readableBytes();
 
-        String string = bytesToHexString(dest);
-        System.out.println("打印");
-        System.out.println("收到的消息是："+string);
-
-
-        Acredindex+=2;
-
-
-        MsgRevData MsgRevData = new MsgRevData();
-
-        in.readShort();
-
-        //消息编号
-        MsgRevData.setMsgID(in.readShort());
-        //Lora编号
-        MsgRevData.setLora_numb(in.readShort());
-
-        //消息
-        byte[] msg=new byte[canReadCount-6];
-        in.getBytes(Acredindex+4,msg);
-        in.readerIndex(0);
-
-        in.clear();
-
-        MsgRevData.setData(msg);
-        System.out.println();
-
-        //将数据封装并发送到串口
-        GetSerialPorts getSerialPorts=null;
-        Map<String, GetSerialPorts> portMap = PortManager.portMap;
-        for(String key : portMap.keySet()){
-            if((MsgRevData.getLora_numb()==0)&&key.equals("COM1")){
-                getSerialPorts= portMap.get(key);
-            }else if((MsgRevData.getLora_numb()==1)&&key.equals("COM3")){
-                getSerialPorts=portMap.get(key);
-            }
+        if (canReadCount < wordlength) {
+            return;
         }
-        System.out.println(getSerialPorts);
 
-        GetSerialPorts.sendData(getSerialPorts.serialPort1,msg);
+        int acredindex = in.readerIndex();
+        int frameLength = in.getByte(acredindex + msglengthindex);    //在可读取空间取前两个字节
+        System.out.println("解析到的长度：" + frameLength);
 
-    }
+        if (canReadCount == frameLength) {
+            byte[] dest = new byte[canReadCount];
+            in.getBytes(acredindex, dest, 0, canReadCount);
+            String string = bytesToHexString(dest);
+            System.out.println("打印:");
+            System.out.println("收到的消息是：" + string);
+            //ctx.flush();
+        }
+        if(canReadCount < frameLength )
+        {
+            byte [] dust = new byte[frameLength];
+            in.getBytes(acredindex,dust,0,frameLength);
+            String string = bytesToHexString(dust);
+            System.out.println("收到的消息小于实际接收的长度!");
+            System.out.println("打印:\n"+string);
+            ctx.flush();
+        }
+        if(canReadCount > frameLength )
+        {
+            byte [] dust = new byte[frameLength];
+            in.getBytes(acredindex,dust,0,frameLength);
+            String string = bytesToHexString(dust);
+            System.out.println("收到的消息大于实际解析的长度！");
+            System.out.println("打印：\n"+string);
+//            ctx.flush();
+//            acredindex =frameLength+1;
+//
+//            while(canReadCount-frameLength!=frameLength){
+//                byte [] dusts = new byte[frameLength];
+//                in.getBytes(acredindex+frameLength,dusts,0,frameLength);
+//                String strings = bytesToHexString(dusts);
+//                if(canReadCount-frameLength>=frameLength){
+//                    System.out.println("消息大于解析时再次解析后的数据是\n:"+strings);
+//                    canReadCount=canReadCount-frameLength;
+//
+//                    }
+//                    ctx.flush();
+//                if(canReadCount<frameLength) {
+//
+//                    frameLength=canReadCount;
+//                    byte [] dustss = new byte[frameLength];
+//                    in.getBytes(acredindex+canReadCount,dustss,0,frameLength);
+//
+//                    String stringss = bytesToHexString(dustss);
+//                    System.out.println("消息小于解析时再次解析后的数据是\n"+stringss);
+//
+//                }
+//                ctx.flush();
+//            }
+//
+//                in.clear();
+        }
+            acredindex += 2;
 
+
+            MsgRevData MsgRevData = new MsgRevData();
+
+            in.readShort();
+
+            //消息编号
+            MsgRevData.setMsgID(in.readShort());
+            //Lora编号
+            MsgRevData.setLora_numb(in.readShort());
+
+            //消息
+            byte[] msg = new byte[canReadCount - 6];
+            in.getBytes(acredindex + 4, msg);
+            in.readerIndex(0);
+
+            in.clear();
+
+            MsgRevData.setData(msg);
+            System.out.println();
+
+            //将数据封装并发送到串口
+            GetSerialPorts getSerialPorts = null;
+            Map<String, GetSerialPorts> portMap = PortManager.portMap;
+            for (String key : portMap.keySet()) {
+                if ((MsgRevData.getLora_numb() == 0) && key.equals("COM1")) {
+                    getSerialPorts = portMap.get(key);
+                } else if ((MsgRevData.getLora_numb() == 1) && key.equals("COM3")) {
+                    getSerialPorts = portMap.get(key);
+                }
+            }
+            System.out.println(getSerialPorts);
+
+            GetSerialPorts.sendData(getSerialPorts.serialPort1, msg);
+            ctx.flush();
+
+        }
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         byte[] bytes = new byte[1];
@@ -115,7 +176,7 @@ public class msgHandler extends ByteToMessageDecoder {
     public static void sendMsg(MsgSendData msgRevData,byte[] bytes){
 
         //分配capacity为16，maxCapacity为256的byteBuf
-        ByteBuf heapBuf = ByteBufAllocator.DEFAULT.buffer(16, 256);
+        ByteBuf heapBuf = ByteBufAllocator.DEFAULT.buffer(64, 256);
         //返回可写字节数
         System.out.println(heapBuf.writableBytes());
         //判断是否可写

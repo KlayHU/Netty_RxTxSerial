@@ -20,23 +20,10 @@
         </plugins>
     </build>
     <dependencies>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-all</artifactId>
-                <version>4.1.39.Final</version>
-            </dependency>
-        <!-- https://mvnrepository.com/artifact/org.eclipse.equinox/org.apache.log4j -->
         <dependency>
-            <groupId>org.eclipse.equinox</groupId>
-            <artifactId>org.apache.log4j</artifactId>
-
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>[4.1.42,)</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.11.2</version>
-        </dependency>
-
     </dependencies>
-    
 </project>

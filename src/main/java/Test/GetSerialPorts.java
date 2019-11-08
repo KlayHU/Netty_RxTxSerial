@@ -40,7 +40,7 @@ public final class GetSerialPorts {
 
         getSystemPort();
 
-        final SerialPort serialPort = openSerialPort(serialPortName,9600);
+        final SerialPort serialPort = openSerialPort(serialPortName,115200);
         setserialPort(serialPort);
 //        TCPServer tcpServer = new TCPServer(8888);
 //        sendData(serialPort,);
