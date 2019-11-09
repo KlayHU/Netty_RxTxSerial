@@ -75,7 +75,7 @@ public final class GetSerialPorts {
 
             CommPort commPort = null;
             try {
-                commPort = portIdentifier.open(serialPortName, 2222);
+                commPort = portIdentifier.open(serialPortName, 2000);
             } catch (PortInUseException e) {
                 e.printStackTrace();
             }
@@ -155,11 +155,11 @@ public final class GetSerialPorts {
                 System.out.println(serialPort.toString());
                 for(String key : portMap.keySet()){
                     System.out.println(portMap.get(key).toString());
-                    GetSerialPorts com1 = portMap.get("COM1");
-                    if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("COM1")){
+                    GetSerialPorts com1 = portMap.get("/dev/ttyUSB05");
+                    if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("/dev/ttyUSB05")){
 
                             msgSendData.setLora_numb((short)0);
-                        }else if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("COM3")){
+                        }else if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("/dev/ttyUSB07")){
                             msgSendData.setLora_numb((short)1);
                         }
                 }

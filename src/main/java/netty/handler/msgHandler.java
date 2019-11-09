@@ -97,9 +97,9 @@ public class msgHandler extends ByteToMessageDecoder {
             GetSerialPorts getSerialPorts = null;
             Map<String, GetSerialPorts> portMap = PortManager.portMap;
             for (String key : portMap.keySet()) {
-                if ((MsgRevData.getLora_numb() == 0) && key.equals("COM1")) {
+                if ((MsgRevData.getLora_numb() == 0) && key.equals("/dev/ttyUSB05")) {
                     getSerialPorts = portMap.get(key);
-                } else if ((MsgRevData.getLora_numb() == 1) && key.equals("COM3")) {
+                } else if ((MsgRevData.getLora_numb() == 1) && key.equals("/dev/ttyUSB07")) {
                     getSerialPorts = portMap.get(key);
                 }
             }
