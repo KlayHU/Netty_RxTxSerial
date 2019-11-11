@@ -1,4 +1,5 @@
 package netty.handler;
+
 import Lora.recive.MsgSendData;
 import Lora.send.MsgRevData;
 import Test.GetSerialPorts;
@@ -7,71 +8,39 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
-import io.netty.handler.codec.ByteToMessageDecoder;
 import netty.Innitializer.serverInnitializer;
+import org.apache.log4j.Logger;
 
-import java.util.List;
 import java.util.Map;
 
-public class msgHandler extends ByteToMessageDecoder {
-
-    /**
-     * 长度:六个字节
-     * 指对协议前六个字节的处理
-     */
-    private int wordlength=6;
-
-    /**
-     * 消息长度所在位置
-     */
-    private int msglengthindex=1;
-
-    private static ChannelGroup channelGroup=new serverInnitializer().channelGroup;
-
+public class msghandler extends SimpleChannelInboundHandler<ByteBuf> {
+    private static Logger logger = Logger.getLogger(msghandler.class);
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> list) throws Exception {
-        System.out.println("服务器收到消息!");
-        int canReadCount = in.readableBytes();
+    protected void messageReceived(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+        logger.info("================================================");
+        logger.info("**********   节点  》》》》》》  串口   **********");
 
-        if (canReadCount < wordlength) {
-            return;
-        }
+        int canReadCount = in.readableBytes();
 
         int acredindex = in.readerIndex();
 
-        int frameLength = in.getByte(acredindex + msglengthindex);    //在可读取空间取前两个字节
-//        if (frameLength null) {
-//            System.out.println("解析到的长度：" + frameLength);
-//        }
-//        else
-            System.out.println("解析到的长度：" + frameLength);
+//        int frameLength = in.getByte(acredindex + msglengthindex);    //在可读取空间取前两个字节
+
+        short frameLength = in.getShort(acredindex);
+
+        logger.info("      解析到的长度：" + frameLength+"      ");
 
         if (canReadCount == frameLength) {
             byte[] dest = new byte[canReadCount];
             in.getBytes(acredindex, dest, 0, canReadCount);
             String string = bytesToHexString(dest);
-            System.out.println("打印:");
-            System.out.println("收到的消息是：" + string);
+
+            logger.info("      收到的消息是：" + string+"      ");
+            logger.info("================================================");
             //ctx.flush();
-        }
-        if(canReadCount < frameLength )
-        {
-            byte [] dust = new byte[frameLength];
-            in.getBytes(acredindex,dust,0,frameLength);
-            String string = bytesToHexString(dust);
-            System.out.println("收到的消息小于实际接收的长度!");
-            System.out.println("打印:\n"+string);
-            ctx.flush();
-        }
-        if(canReadCount > frameLength )
-        {
-            byte [] dust = new byte[frameLength];
-            in.getBytes(acredindex,dust,0,frameLength);
-            String string = bytesToHexString(dust);
-            System.out.println("收到的消息大于实际解析的长度！");
-            System.out.println("打印：\n"+string);
-        }
+
             acredindex += 2;
 
             MsgRevData MsgRevData = new MsgRevData();
@@ -91,43 +60,53 @@ public class msgHandler extends ByteToMessageDecoder {
             in.clear();
 
             MsgRevData.setData(msg);
-            System.out.println();
+//          System.out.println();
 
             //将数据封装并发送到串口
             GetSerialPorts getSerialPorts = null;
             Map<String, GetSerialPorts> portMap = PortManager.portMap;
             for (String key : portMap.keySet()) {
-                if ((MsgRevData.getLora_numb() == 0) && key.equals("/dev/ttyUSB05")) {
+                if ((MsgRevData.getLora_numb() == 0) && key.equals("/dev/ttyUSB02")) {
                     getSerialPorts = portMap.get(key);
-                } else if ((MsgRevData.getLora_numb() == 1) && key.equals("/dev/ttyUSB07")) {
+                } else if ((MsgRevData.getLora_numb() == 1) && key.equals("/dev/ttyUSB04")) {
                     getSerialPorts = portMap.get(key);
                 }
             }
-            System.out.println(getSerialPorts);
 
+            logger.info("=====发送到串口   "+"     "+getSerialPorts.getSerialPortName()+"     ======");
+            logger.info("           数据为   ："+bytesToHexString(msg)+"           ");
+            logger.info("==================================================");
+
+//          Thread.sleep(30);
             GetSerialPorts.sendData(getSerialPorts.serialPort1, msg);
             ctx.flush();
+        }else {
+            byte[] dest = new byte[in.readableBytes()];
+            in.getBytes(acredindex, dest, 0, in.readableBytes());
+            String string = bytesToHexString(dest);
+            logger.error("消息错误！！！！！！>>>>>>>>>>>"+string+"<<<<<<<<<<<");
         }
+    }
+
+    private static ChannelGroup channelGroup=new serverInnitializer().channelGroup;
+
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         byte[] bytes = new byte[1];
         bytes[0]=6;
         channelGroup.add(ctx.channel());
         MsgSendData msgRevData = new MsgSendData();
-        msgRevData.setLora_numb((short) 0);
+//        msgRevData.setLora_numb((short) 0);
         msgRevData.setMsgID((short) 1);
-        msgRevData.setLora_numb((short)0);
+        msgRevData.setLora_numb((short)1);
         msgRevData.setMsgLength((short) (bytes.length+6));
     }
 
     public static void sendMsg(MsgSendData msgRevData,byte[] bytes){
 
         //分配capacity为16，maxCapacity为256的byteBuf
-        ByteBuf heapBuf = ByteBufAllocator.DEFAULT.buffer(64, 256);
-        //返回可写字节数
-        System.out.println(heapBuf.writableBytes());
-        //判断是否可写
-        System.out.println(heapBuf.isWritable());
+        ByteBuf heapBuf = ByteBufAllocator.DEFAULT.buffer(64,320);
+
         heapBuf.writeShort(msgRevData.getMsgLength());//改长度为加上消息的所有长度
         heapBuf.writeShort(msgRevData.getMsgID());
         heapBuf.writeShort(msgRevData.getLora_numb());
@@ -137,14 +116,17 @@ public class msgHandler extends ByteToMessageDecoder {
 
         heapBuf.getBytes(0,dest,0,msgRevData.getMsgLength());
         String string = bytesToHexString(dest);
-        System.out.println(string);
+        logger.info("**********   节点  《《《《《《  串口   **********");
+        logger.info("       发送的消息为："+string+"     ");
+        logger.info("===============================================");
+//        System.out.println(string);
         for (Channel channel:channelGroup) {
             channel.writeAndFlush(heapBuf);
         }
 
     }
 
-    private static String bytesToHexString(byte[] src){
+    public static String bytesToHexString(byte[] src){
         StringBuilder stringBuilder = new StringBuilder("");
         if (src == null || src.length <= 0) {
             return null;
@@ -160,4 +142,5 @@ public class msgHandler extends ByteToMessageDecoder {
         }
         return stringBuilder.toString();
     }
+
 }

@@ -16,11 +16,11 @@ public class PortManager {
 
     public void run() {
         List<String> systemPort = GetSerialPorts.getSystemPort();
-        for (int i = 0; i <= systemPort.size() / 2; ) {
+        for (int i = 1; i >=0; i--) {
             getSerialPorts = new GetSerialPorts(systemPort.get(i));
             getSerialPorts.run();
             portMap.put(systemPort.get(i), getSerialPorts);
-            i += 2;
+//            i += 2;
         }
     }
 }

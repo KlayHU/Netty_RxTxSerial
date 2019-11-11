@@ -2,15 +2,16 @@ package Test;
 
 import Lora.recive.MsgSendData;
 import gnu.io.*;
-import netty.handler.msgHandler;
+import netty.handler.msghandler;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
-
 public final class GetSerialPorts {
+
+    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(GetSerialPorts.class);
     @Override
     public String toString() {
         return "GetSerialPorts{" +
@@ -33,7 +34,6 @@ public final class GetSerialPorts {
         this.serialPort1=serialPort;
     }
 
-
     public void run(){
 
         getSystemPort();
@@ -46,13 +46,12 @@ public final class GetSerialPorts {
             public void serialEvent(SerialPortEvent arg0) {
                 if(arg0.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
                     byte[] bytes = GetSerialPorts.readData(serialPort);
-                    System.out.println("收到的数据长度："+bytes.length);
-                    System.out.println("收到的数据："+new String(bytes));
+//                    System.out.println("收到的数据长度："+bytes.length);
+//                    System.out.println("收到的数据："+new String(bytes));
                 }
             }
         });
     }
-
 
     @SuppressWarnings("unchecked")
     public static List<String> getSystemPort(){
@@ -63,7 +62,7 @@ public final class GetSerialPorts {
             String portName = portList.nextElement().getName();
             systemPorts.add(portName);
         }
-        System.out.println("系统可用端口列表："+systemPorts);
+        logger.info("系统可用端口列表："+systemPorts);
         return systemPorts;
     }
 
@@ -87,7 +86,7 @@ public final class GetSerialPorts {
                 } catch (UnsupportedCommOperationException e) {
                     e.printStackTrace();
                 }
-                System.out.println("开启串口成功，串口名称："+serialPortName);
+                logger.info("开启串口成功，串口名称："+serialPortName);
                 return serialPort;
             }
             else {
@@ -103,7 +102,7 @@ public final class GetSerialPorts {
     public static void closeSerialPort(SerialPort serialPort) {
         if(serialPort != null) {
             serialPort.close();
-            System.out.println("关闭了串口："+serialPort.getName());
+            logger.info("关闭了串口："+serialPort.getName());
             serialPort = null;
         }
     }
@@ -143,6 +142,7 @@ public final class GetSerialPorts {
             int bufflenth = is.available();
             while (bufflenth != 0) {
                 bytes = new byte[bufflenth];
+
                 is.read(bytes);
 
                 //发送到网关
@@ -152,20 +152,29 @@ public final class GetSerialPorts {
                 Map<String, GetSerialPorts> portMap = PortManager.portMap;
                 GetSerialPorts getSerialPorts=null;
 
-                System.out.println(serialPort.toString());
-                for(String key : portMap.keySet()){
-                    System.out.println(portMap.get(key).toString());
-                    GetSerialPorts com1 = portMap.get("/dev/ttyUSB05");
-                    if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("/dev/ttyUSB05")){
 
+                String port=null;
+
+                for(String key : portMap.keySet()){
+                //  GetSerialPorts com1 = portMap.get("/dev/ttyUSB02");
+                    if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("/dev/ttyUSB02")){
+                            port=key;
                             msgSendData.setLora_numb((short)0);
-                        }else if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("/dev/ttyUSB07")){
+                        }else if((portMap.get(key).getSerialPort1().toString().equals(serialPort.toString()))&&key.equals("/dev/ttyUSB04")){
                             msgSendData.setLora_numb((short)1);
+                            port=key;
                         }
                 }
 
                 msgSendData.setMsgLength((short) (bytes.length+6));
-                msgHandler.sendMsg(msgSendData,bytes);
+
+                logger.info("=====收到串口   "+port+"     数据============");
+                logger.info("数据为   :"+ msghandler.bytesToHexString(bytes));
+                logger.info("=======================================");
+
+
+
+                msghandler.sendMsg(msgSendData,bytes);
                 bufflenth = is.available();
             }
         } catch (IOException e) {
